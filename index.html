@@ -1,0 +1,962 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>我的地盘我做主</title>
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: 'Arial Rounded MT Bold', 'Helvetica Rounded', Arial, sans-serif;
+            background: linear-gradient(135deg, #6e8efb, #a777e3);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1024px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: rgba(255, 255, 255, 0.95);
+            border-radius: 30px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            min-height: calc(100vh - 40px);
+            position: relative;
+            border: 15px solid #ff9a9e;
+            animation: float 6s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+
+        /* 页面通用样式 */
+        .page {
+            display: none;
+            min-height: 700px;
+        }
+
+        .page.active {
+            display: block;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 20px;
+            background: linear-gradient(45deg, #ff9a9e, #fad0c4);
+            border-radius: 25px;
+            border: 8px solid #ff6b8b;
+            box-shadow: 0 10px 30px rgba(255, 107, 139, 0.4);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.2) 1px, transparent 1px);
+            background-size: 20px 20px;
+            animation: sparkle 3s linear infinite;
+        }
+
+        @keyframes sparkle {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        h1 {
+            font-size: 3.5em;
+            color: #fff;
+            text-shadow: 4px 4px 0 #ff6b8b,
+                       6px 6px 0 rgba(0,0,0,0.1);
+            margin-bottom: 10px;
+            letter-spacing: 2px;
+        }
+
+        h2 {
+            font-size: 2.8em;
+            color: #ff6b8b;
+            text-shadow: 3px 3px 0 rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+
+        h3 {
+            font-size: 2.2em;
+            color: #a777e3;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        /* 按钮样式 */
+        .buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+            margin-top: 60px;
+        }
+
+        .btn {
+            padding: 28px 40px;
+            font-size: 1.8em;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            font-weight: bold;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            position: relative;
+            overflow: hidden;
+            z-index: 1;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .btn:hover {
+            transform: translateY(-8px) scale(1.05);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.3);
+        }
+
+        .btn:active {
+            transform: translateY(-4px) scale(1.02);
+        }
+
+        .btn-main {
+            background: linear-gradient(45deg, #ff9a9e, #fecfef);
+            color: white;
+            border: 6px solid #ff6b8b;
+        }
+
+        .btn-correct {
+            background: linear-gradient(45deg, #56ab2f, #a8e063);
+            color: white;
+            border: 6px solid #2e8b57;
+            font-size: 1.6em;
+            flex: 1;
+        }
+
+        .btn-wrong {
+            background: linear-gradient(45deg, #ff416c, #ff4b2b);
+            color: white;
+            border: 6px solid #dc143c;
+            font-size: 1.6em;
+            flex: 1;
+        }
+
+        .btn-secondary {
+            background: linear-gradient(45deg, #4776E6, #8E54E9);
+            color: white;
+            border: 6px solid #5d4ae3;
+        }
+
+        .btn-return {
+            background: linear-gradient(45deg, #36D1DC, #5B86E5);
+            color: white;
+            border: 6px solid #1e90ff;
+            font-size: 1.5em;
+            padding: 20px 30px;
+        }
+
+        /* 题目显示区域 */
+        .question-area {
+            background: linear-gradient(135deg, #fdfcfb, #e2d1c3);
+            padding: 30px;
+            border-radius: 25px;
+            border: 6px solid #d4a574;
+            margin-bottom: 30px;
+            min-height: 200px;
+        }
+
+        .question-info {
+            font-size: 1.6em;
+            color: #8b4513;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 3px dashed #d4a574;
+        }
+
+        .question-content {
+            font-size: 1.8em;
+            line-height: 1.6;
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        .answer-area {
+            background: linear-gradient(135deg, #e0f7fa, #b2ebf2);
+            padding: 30px;
+            border-radius: 25px;
+            border: 6px solid #26c6da;
+            margin-bottom: 30px;
+            min-height: 150px;
+            display: none;
+        }
+
+        .answer-content {
+            font-size: 1.8em;
+            line-height: 1.6;
+            color: #006064;
+        }
+
+        /* 控制按钮区域 */
+        .control-buttons {
+            display: flex;
+            gap: 20px;
+            margin: 40px 0;
+        }
+
+        .control-buttons .btn {
+            flex: 1;
+            padding: 25px 20px;
+        }
+
+        /* 底部导航 */
+        .bottom-nav {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 40px;
+            padding-top: 30px;
+            border-top: 4px dashed #ccc;
+        }
+
+        /* 统计表格 */
+        .stats-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            margin: 30px 0;
+            background: white;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+
+        .stats-table th {
+            background: linear-gradient(45deg, #ff9a9e, #fad0c4);
+            color: white;
+            padding: 25px;
+            font-size: 1.8em;
+            text-align: center;
+            border-right: 2px solid #ff6b8b;
+        }
+
+        .stats-table th:last-child {
+            border-right: none;
+        }
+
+        .stats-table td {
+            padding: 25px;
+            font-size: 1.6em;
+            text-align: center;
+            border-right: 2px solid #eee;
+            border-bottom: 2px solid #eee;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .stats-table td:last-child {
+            border-right: none;
+        }
+
+        .stats-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .stats-table td:hover {
+            background-color: #f0f8ff;
+            transform: scale(1.05);
+        }
+
+        .stats-table .subject-row {
+            background: linear-gradient(45deg, #f8f9fa, #e9ecef);
+            font-weight: bold;
+        }
+
+        /* 错题列表 */
+        .wrong-questions-list {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            max-height: 600px;
+            overflow-y: auto;
+            border: 6px solid #ff9a9e;
+            margin: 30px 0;
+        }
+
+        .wrong-question-item {
+            background: linear-gradient(135deg, #fff5f5, #ffeaea);
+            padding: 25px;
+            margin-bottom: 20px;
+            border-radius: 15px;
+            border-left: 10px solid #ff6b8b;
+            font-size: 1.6em;
+            line-height: 1.6;
+            transition: all 0.3s ease;
+        }
+
+        .wrong-question-item:hover {
+            transform: translateX(10px);
+            box-shadow: 0 10px 25px rgba(255, 107, 139, 0.3);
+        }
+
+        .wrong-question-item .number {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            background: #ff6b8b;
+            color: white;
+            text-align: center;
+            line-height: 40px;
+            border-radius: 50%;
+            margin-right: 15px;
+            font-weight: bold;
+        }
+
+        /* 加载动画 */
+        .loader {
+            display: none;
+            text-align: center;
+            padding: 40px;
+        }
+
+        .spinner {
+            width: 80px;
+            height: 80px;
+            border: 10px solid #f3f3f3;
+            border-top: 10px solid #ff6b8b;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* 响应式调整 */
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+                border-width: 10px;
+            }
+            
+            h1 {
+                font-size: 2.5em;
+            }
+            
+            h2 {
+                font-size: 2em;
+            }
+            
+            .btn {
+                padding: 20px;
+                font-size: 1.5em;
+            }
+            
+            .question-content,
+            .answer-content {
+                font-size: 1.5em;
+            }
+            
+            .stats-table th,
+            .stats-table td {
+                padding: 15px;
+                font-size: 1.4em;
+            }
+        }
+
+        /* 可爱元素装饰 */
+        .decoration {
+            position: absolute;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .star {
+            width: 20px;
+            height: 20px;
+            background: #ffeb3b;
+            clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+            animation: twinkle 3s infinite;
+        }
+
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.3; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.2); }
+        }
+
+        .heart {
+            width: 20px;
+            height: 20px;
+            background: #ff6b8b;
+            transform: rotate(45deg);
+            animation: heartbeat 1.5s infinite;
+        }
+
+        .heart:before,
+        .heart:after {
+            content: '';
+            width: 20px;
+            height: 20px;
+            background: #ff6b8b;
+            border-radius: 50%;
+            position: absolute;
+        }
+
+        .heart:before {
+            top: -10px;
+            left: 0;
+        }
+
+        .heart:after {
+            top: 0;
+            left: -10px;
+        }
+
+        @keyframes heartbeat {
+            0%, 100% { transform: rotate(45deg) scale(1); }
+            50% { transform: rotate(45deg) scale(1.1); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 装饰元素 -->
+        <div class="decoration star" style="top: 50px; left: 50px;"></div>
+        <div class="decoration heart" style="top: 100px; right: 100px;"></div>
+        <div class="decoration star" style="bottom: 100px; left: 100px;"></div>
+        <div class="decoration heart" style="bottom: 150px; right: 150px;"></div>
+        
+        <!-- 页面1: 主页面 -->
+        <div id="page1" class="page active">
+            <div class="header">
+                <h1>闯关大作战</h1>
+            </div>
+            <div class="buttons">
+                <button class="btn btn-main" onclick="showPage(3)">
+                    📊 错题分析
+                </button>
+                <button class="btn btn-secondary" onclick="showPage(2)">
+                    🎯 冒险去吧
+                </button>
+                <button class="btn btn-secondary" onclick="exitApp()">
+                    🚪 退出
+                </button>
+            </div>
+        </div>
+
+        <!-- 页面2: 挑战页面 -->
+        <div id="page2" class="page">
+            <div class="header">
+                <h2>请挑战</h2>
+            </div>
+            
+            <button class="btn btn-main" onclick="showRandomQuestion()" style="width: 100%; margin-bottom: 30px;">
+                🔍 点击显示题目
+            </button>
+            
+            <div class="question-area">
+                <div class="question-info" id="questionInfo">等待题目...</div>
+                <div class="question-content" id="questionContent">请点击上方按钮获取题目</div>
+            </div>
+            
+            <button class="btn btn-secondary" onclick="showAnswer()" style="width: 100%; margin-bottom: 30px;">
+                🎯 显示答案
+            </button>
+            
+            <div class="answer-area" id="answerArea">
+                <div class="answer-content" id="answerContent">答案将显示在这里</div>
+            </div>
+            
+            <div class="control-buttons">
+                <button class="btn btn-correct" onclick="recordAnswer(true)">
+                    ✅ 对啦！
+                </button>
+                <button class="btn btn-wrong" onclick="recordAnswer(false)">
+                    ❌ 错了
+                </button>
+            </div>
+            
+            <div class="bottom-nav">
+                <button class="btn btn-return" onclick="showPage(1)">
+                    ↩️ 返回
+                </button>
+                <button class="btn btn-main" onclick="nextQuestion()">
+                    🔄 下一题
+                </button>
+            </div>
+        </div>
+
+        <!-- 页面3: 错题统计 -->
+        <div id="page3" class="page">
+            <div class="header">
+                <h2>错题率统计</h2>
+            </div>
+            
+            <div id="statsTableContainer">
+                <!-- 统计表格将动态生成 -->
+            </div>
+            
+            <div class="bottom-nav">
+                <button class="btn btn-return" onclick="showPage(1)">
+                    ↩️ 返回主页
+                </button>
+            </div>
+        </div>
+
+        <!-- 页面4: 错题目录 -->
+        <div id="page4" class="page">
+            <div class="header">
+                <h2>错题目录</h2>
+                <div id="unitTitle" style="font-size: 1.8em; color: white; margin-top: 10px;"></div>
+            </div>
+            
+            <div class="wrong-questions-list" id="wrongQuestionsList">
+                <!-- 错题列表将动态生成 -->
+            </div>
+            
+            <div class="bottom-nav">
+                <button class="btn btn-return" onclick="showPage(3)">
+                    ↩️ 返回统计
+                </button>
+            </div>
+        </div>
+
+        <!-- 加载动画 -->
+        <div class="loader" id="loader">
+            <div class="spinner"></div>
+            <div style="font-size: 1.5em; color: #666;">加载中...</div>
+        </div>
+    </div>
+
+    <script>
+        // 数据库数据
+        let allQuestions = [];
+        let currentQuestion = null;
+        let wrongQuestions = {};
+        let currentUnit = '';
+
+        // 初始化函数
+        function initApp() {
+            loadData();
+            loadWrongQuestions();
+            updateStatsTable();
+            
+            // 添加装饰元素
+            addDecorations();
+        }
+
+        // 加载题目数据
+        async function loadData() {
+            showLoader(true);
+            try {
+                // 从localStorage加载数据
+                const savedData = localStorage.getItem('questionData');
+                if (savedData) {
+                    allQuestions = JSON.parse(savedData);
+                    console.log('从缓存加载了', allQuestions.length, '道题目');
+                } else {
+                    // 使用硬编码的数据
+                    await loadHardcodedData();
+                    console.log('加载了硬编码数据', allQuestions.length, '道题目');
+                }
+            } catch (error) {
+                console.error('加载数据失败:', error);
+                await loadHardcodedData();
+            }
+            showLoader(false);
+        }
+
+        // 加载硬编码数据（示例数据）
+        async function loadHardcodedData() {
+            // 这里只是示例，实际应该包含完整的Excel数据
+            // 为了演示，我们创建一些示例数据
+            allQuestions = [
+                {
+                    "学科": "语文",
+                    "单元": "第1单元",
+                    "课数": "第1课",
+                    "课名": "白鹭",
+                    "知识点": "字音",
+                    "题目": "宜",
+                    "答案": "宜yī（相宜、适宜、事不宜迟）"
+                },
+                {
+                    "学科": "语文",
+                    "单元": "第1单元",
+                    "课数": "第1课",
+                    "课名": "白鹭",
+                    "知识点": "字音",
+                    "题目": "鹤",
+                    "答案": "鹤hé（白鹭、丹顶鹤、鹤发童颜）"
+                },
+                {
+                    "学科": "数学",
+                    "单元": "第1单元",
+                    "课数": "",
+                    "课名": "小数乘法",
+                    "知识点": "小数乘小数",
+                    "题目": "1.5×0.8（整数部分是0）就是求",
+                    "答案": "1.5×0.8（整数部分是0）就是求：1.5的十分之八是多少。"
+                },
+                {
+                    "学科": "数学",
+                    "单元": "第1单元",
+                    "课数": "",
+                    "课名": "小数乘法",
+                    "知识点": "小数乘小数",
+                    "题目": "小数乘整数计算方法是先把小数扩大成整数",
+                    "答案": "小数乘整数计算方法是先把小数扩大成整数：按整数乘法的法则算出积；再看因数中一共有几位小数，就从积的右边起数出几位点上小数点。"
+                },
+                {
+                    "学科": "英语",
+                    "单元": "Unit 1",
+                    "课数": "",
+                    "课名": "单词",
+                    "知识点": "单词（家庭成员相关）",
+                    "题目": "cousin",
+                    "答案": "cousin堂 [表] 兄弟；堂 [表] 姐妹"
+                }
+            ];
+            
+            // 保存到localStorage
+            localStorage.setItem('questionData', JSON.stringify(allQuestions));
+        }
+
+        // 显示加载动画
+        function showLoader(show) {
+            document.getElementById('loader').style.display = show ? 'block' : 'none';
+        }
+
+        // 显示随机题目
+        function showRandomQuestion() {
+            if (allQuestions.length === 0) {
+                alert('题目数据加载中，请稍后...');
+                return;
+            }
+            
+            const randomIndex = Math.floor(Math.random() * allQuestions.length);
+            currentQuestion = allQuestions[randomIndex];
+            
+            // 显示题目信息
+            const questionInfo = document.getElementById('questionInfo');
+            const questionContent = document.getElementById('questionContent');
+            
+            questionInfo.innerHTML = `
+                ${currentQuestion.学科} - ${currentQuestion.单元} - ${currentQuestion.课名} - ${currentQuestion.知识点}
+            `;
+            
+            questionContent.textContent = `题目：${currentQuestion.题目}`;
+            
+            // 隐藏答案区域
+            document.getElementById('answerArea').style.display = 'none';
+        }
+
+        // 显示答案
+        function showAnswer() {
+            if (!currentQuestion) {
+                alert('请先获取题目！');
+                return;
+            }
+            
+            const answerArea = document.getElementById('answerArea');
+            const answerContent = document.getElementById('answerContent');
+            
+            answerContent.textContent = `答案：${currentQuestion.答案}`;
+            answerArea.style.display = 'block';
+        }
+
+        // 记录答案对错
+        function recordAnswer(isCorrect) {
+            if (!currentQuestion) {
+                alert('请先获取题目！');
+                return;
+            }
+            
+            const questionKey = getQuestionKey(currentQuestion);
+            
+            if (!isCorrect) {
+                // 记录错题
+                if (!wrongQuestions[currentQuestion.学科]) {
+                    wrongQuestions[currentQuestion.学科] = {};
+                }
+                if (!wrongQuestions[currentQuestion.学科][currentQuestion.单元]) {
+                    wrongQuestions[currentQuestion.学科][currentQuestion.单元] = [];
+                }
+                
+                // 检查是否已经记录过
+                const existingIndex = wrongQuestions[currentQuestion.学科][currentQuestion.单元]
+                    .findIndex(q => getQuestionKey(q) === questionKey);
+                
+                if (existingIndex === -1) {
+                    wrongQuestions[currentQuestion.学科][currentQuestion.单元].push({
+                        ...currentQuestion,
+                        timestamp: Date.now()
+                    });
+                    saveWrongQuestions();
+                }
+            } else {
+                // 如果答对了，从错题中移除
+                removeWrongQuestion(currentQuestion);
+            }
+            
+            // 显示反馈
+            if (isCorrect) {
+                alert('🎉 太棒了！答对了！');
+            } else {
+                alert('💪 继续加油！这道题已加入错题本');
+            }
+        }
+
+        // 移除错题
+        function removeWrongQuestion(question) {
+            const questionKey = getQuestionKey(question);
+            
+            if (wrongQuestions[question.学科] && wrongQuestions[question.学科][question.单元]) {
+                const index = wrongQuestions[question.学科][question.单元]
+                    .findIndex(q => getQuestionKey(q) === questionKey);
+                
+                if (index !== -1) {
+                    wrongQuestions[question.学科][question.unit].splice(index, 1);
+                    saveWrongQuestions();
+                }
+            }
+        }
+
+        // 获取题目唯一标识
+        function getQuestionKey(question) {
+            return `${question.学科}_${question.单元}_${question.题目}`;
+        }
+
+        // 保存错题数据
+        function saveWrongQuestions() {
+            localStorage.setItem('wrongQuestions', JSON.stringify(wrongQuestions));
+            updateStatsTable();
+        }
+
+        // 加载错题数据
+        function loadWrongQuestions() {
+            const saved = localStorage.getItem('wrongQuestions');
+            if (saved) {
+                wrongQuestions = JSON.parse(saved);
+            }
+        }
+
+        // 下一题
+        function nextQuestion() {
+            showRandomQuestion();
+        }
+
+        // 显示页面
+        function showPage(pageNumber) {
+            // 隐藏所有页面
+            document.querySelectorAll('.page').forEach(page => {
+                page.classList.remove('active');
+            });
+            
+            // 显示目标页面
+            document.getElementById(`page${pageNumber}`).classList.add('active');
+            
+            // 更新统计表格（如果显示页面3）
+            if (pageNumber === 3) {
+                updateStatsTable();
+            }
+        }
+
+        // 更新统计表格
+        function updateStatsTable() {
+            const container = document.getElementById('statsTableContainer');
+            if (!container) return;
+            
+            // 统计各学科各单元的错题率
+            const stats = calculateStats();
+            
+            let html = '<table class="stats-table">';
+            
+            // 表头
+            html += '<thead><tr>';
+            html += '<th>科目</th>';
+            html += '<th>单元1</th><th>单元2</th><th>单元3</th>';
+            html += '<th>单元4</th><th>单元5</th><th>单元6</th>';
+            html += '<th>单元7</th><th>单元8</th><th>单元9</th>';
+            html += '</tr></thead>';
+            
+            // 表格内容
+            html += '<tbody>';
+            
+            const subjects = ['语文', '数学', '英语'];
+            subjects.forEach(subject => {
+                html += `<tr class="subject-row">`;
+                html += `<td>${subject}</td>`;
+                
+                for (let i = 1; i <= 9; i++) {
+                    const unit = `第${i}单元`;
+                    const stat = stats[subject]?.[unit] || null;
+                    
+                    if (stat && stat.total > 0) {
+                        const errorRate = Math.round((stat.wrong / stat.total) * 100);
+                        html += `<td onclick="showWrongQuestions('${subject}', '${unit}')" 
+                                 style="color: ${errorRate > 50 ? '#ff416c' : errorRate > 20 ? '#ff9a00' : '#56ab2f'};
+                                        font-weight: bold;">
+                                ${errorRate}%
+                                </td>`;
+                    } else {
+                        html += '<td>-</td>';
+                    }
+                }
+                
+                html += '</tr>';
+            });
+            
+            html += '</tbody></table>';
+            
+            container.innerHTML = html;
+        }
+
+        // 计算统计
+        function calculateStats() {
+            const stats = {};
+            
+            // 初始化统计结构
+            ['语文', '数学', '英语'].forEach(subject => {
+                stats[subject] = {};
+                for (let i = 1; i <= 9; i++) {
+                    const unit = `第${i}单元`;
+                    stats[subject][unit] = { total: 0, wrong: 0 };
+                }
+            });
+            
+            // 统计总题数
+            allQuestions.forEach(question => {
+                if (stats[question.学科] && stats[question.学科][question.单元]) {
+                    stats[question.学科][question.单元].total++;
+                }
+            });
+            
+            // 统计错题数
+            Object.keys(wrongQuestions).forEach(subject => {
+                Object.keys(wrongQuestions[subject] || {}).forEach(unit => {
+                    if (stats[subject] && stats[subject][unit]) {
+                        stats[subject][unit].wrong = wrongQuestions[subject][unit].length;
+                    }
+                });
+            });
+            
+            return stats;
+        }
+
+        // 显示错题列表
+        function showWrongQuestions(subject, unit) {
+            currentUnit = `${subject}_${unit}`;
+            
+            // 设置单元标题
+            document.getElementById('unitTitle').textContent = `${subject} - ${unit}`;
+            
+            // 显示页面4
+            showPage(4);
+            
+            // 生成错题列表
+            updateWrongQuestionsList();
+        }
+
+        // 更新错题列表
+        function updateWrongQuestionsList() {
+            const [subject, unit] = currentUnit.split('_');
+            const listContainer = document.getElementById('wrongQuestionsList');
+            
+            if (!wrongQuestions[subject] || !wrongQuestions[subject][unit]) {
+                listContainer.innerHTML = '<div class="wrong-question-item">暂无错题 🎉</div>';
+                return;
+            }
+            
+            const questions = wrongQuestions[subject][unit];
+            let html = '';
+            
+            questions.forEach((question, index) => {
+                html += `
+                    <div class="wrong-question-item">
+                        <span class="number">${index + 1}</span>
+                        <strong>${question.题目}</strong><br>
+                        <span style="color: #666; margin-left: 55px;">答案：${question.答案}</span>
+                    </div>
+                `;
+            });
+            
+            listContainer.innerHTML = html;
+        }
+
+        // 退出应用
+        function exitApp() {
+            if (confirm('确定要退出吗？')) {
+                // 在PWA中，我们只能显示退出提示
+                alert('请从主屏幕移除应用或关闭浏览器标签页');
+            }
+        }
+
+        // 添加装饰元素
+        function addDecorations() {
+            const container = document.querySelector('.container');
+            const decorations = ['star', 'heart', 'star', 'heart', 'star'];
+            
+            decorations.forEach((type, index) => {
+                const deco = document.createElement('div');
+                deco.className = `decoration ${type}`;
+                deco.style.top = `${Math.random() * 80 + 10}%`;
+                deco.style.left = `${Math.random() * 80 + 10}%`;
+                deco.style.animationDelay = `${index * 0.5}s`;
+                container.appendChild(deco);
+            });
+        }
+
+        // PWA服务注册
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js').catch(error => {
+                    console.log('Service Worker 注册失败:', error);
+                });
+            });
+        }
+
+        // 应用启动
+        window.addEventListener('DOMContentLoaded', initApp);
+
+        // 添加到主屏幕提示
+        let deferredPrompt;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            
+            // 显示安装提示
+            setTimeout(() => {
+                if (confirm('是否要将此应用添加到主屏幕？')) {
+                    deferredPrompt.prompt();
+                    deferredPrompt.userChoice.then((choiceResult) => {
+                        if (choiceResult.outcome === 'accepted') {
+                            console.log('用户接受了安装提示');
+                        }
+                        deferredPrompt = null;
+                    });
+                }
+            }, 3000);
+        });
+    </script>
+</body>
+</html>

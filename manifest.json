@@ -1,0 +1,21 @@
+{
+  "name": "我的地盘我做主",
+  "short_name": "闯关大作战",
+  "description": "随机抽题学习应用",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#6e8efb",
+  "theme_color": "#6e8efb",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
